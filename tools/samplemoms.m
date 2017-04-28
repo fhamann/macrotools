@@ -34,4 +34,9 @@ for i=-k:k,
    end
 end
 
+% for j = 1: nseries  
+%         aux1(:,j) = autocorr(x(:,j),k);
+%         auocorr = aux1;
+% end
+    
 [acorr] = correlogram(x,k);

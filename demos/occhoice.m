@@ -6,19 +6,19 @@
 %% Parameters
  sigma	= 2;            % risk aversion
  beta	= 0.99;         % discount factor
- R      = 1.004;        % gross asset return rate
- tau    = 0.2;          % income tax
- kappa  = 0.1;          % switching cost
+ R      = 1.007;        % gross asset return rate
+ tau    = 0.35;         % income tax
+ kappa  = 0.01;         % switching cost
 
- if R*beta>=1; display('Set beta*R<1 for convergence'); break; end;
+ if R*beta>=1; warning('Set beta*R<1 for convergence'); end;
 
 %% Markov chain for y: [y,prob] = markovchain(ny,p,q,e,m,a)
- [y,Py] = markovchain(3,0.7,0.7,0.6);      % Markov chain
+ [y,Py] = markovchain(9,0.7,0.7,0.6);      % Markov chain
  y      = exp(y);                          % set earnings positive
  yf     = y'*ergdist(Py);                  % formal earnings
 
 %% State-space S = YxB
- b       = linspace(-15,10,300)';          % B = {b1<b2<b3<...<bn}
+ b       = linspace(-15,10,500)';          % B = {b1<b2<b3<...<bn}
  f       = [0;1];                          % F = {0,1}; 0:formal,1:informal
 
  [Y,B,F] = gridmake(y,b,f);                % state-space grid
@@ -30,10 +30,11 @@
 %% Utility function and feasible consumption C>=0
  C  = zeros(n,m);
   for i=1:m
+
       C(:,i) = ((1-tau)*yf + R*B - bp(i)).*(1-F)*(1-fp(i)) + ...
-               ((1-tau)*yf + R*B - bp(i)).*(1-F)*fp(i)     + ...
+               (Y + R*B - bp(i)).*(1-F)*fp(i)     + ...
                (Y+R*B-bp(i)).*F*fp(i)                      + ...
-               (Y+R*B-bp(i)-kappa).*F*(1-fp(i));
+               ((1-tau)*yf+R*B-bp(i)-kappa*yf).*F*(1-fp(i));
   end
 
  C(C<=0) = NaN;
@@ -54,5 +55,5 @@
   fprintf('\n Formal             %8.2f'  ,sum(d(1:n/2)))  
   fprintf('\n Informal           %8.2f'  ,sum(d(1+n/2:end))) 
   fprintf('\nNet Assets          %8.2f'  ,bp(x)'*d) 
-  fprintf('\n Formal             %8.2f'  ,bp(x(1:n/2))'*d(1:n/2))  
-  fprintf('\n Informal           %8.2f\n',bp(x(1+n/2:end))'*d(1+n/2:end)) 
+  fprintf('\n Formal             %8.2f'  ,(bp(x(1:n/2))'*d(1:n/2))/(bp(x)'*d))  
+  fprintf('\n Informal           %8.2f\n',(bp(x(1+n/2:end))'*d(1+n/2:end))/(bp(x)'*d)) 

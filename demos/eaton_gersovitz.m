@@ -4,7 +4,7 @@
 % supply. The notation and some assumptions here differs slightly from 
 % those on the paper.
 
-clear,clc
+clear
 
 % Model Parameters
 mu     = 2;                              % risk aversion              
@@ -15,7 +15,7 @@ lambda = 0.1;                            % prob of redemption 0.1
 rate   = 0.01;                           % exogenous interest rate
 
 n1 = 15;                                  % # gridpts exog. for growth rate 
-n2 = 200;                                % # gridpts endo. for assets (400)
+n2 = 400;                                % # gridpts endo. for assets (400)
 n  = n1*n2;                              % # total states gridpoints
 m  = n2;                                 % # total action gridpoints
 
@@ -29,7 +29,7 @@ m  = n2;                                 % # total action gridpoints
 
 rho    = 0.17;                           % autocorrelation coefficient
 sigma  = 0.03;                           % std dev of growth rate shocks
-meg    = 1.006;                          % long run mean for trend income
+meg    = 1.003;                          % long run mean for trend income
 cg     = .5*((sigma^2)/(1-rho^2));       % AR(1) parameter
 cg     = (1-rho)*(log(meg)-cg);          % constant term of the AR(1)
 width  = 4.1458;                         % width of state shocks
@@ -40,11 +40,11 @@ g = exp(g);
 % 2. Build the state-space grid 
 
 amax  = 0;                                % max value of asset grid  
-amin  = -0.22;                            % min value of asset grid  
+amin  = -0.35;                             % min value of asset grid  
 a     = linspace(amin,amax,n2);           % linearly spaced vector
 azero = find(a==0);                       % state where assets is zero
 
-[A,G] = gridmake(a',g');                 % the order of states follows A&G
+[A,G] = gridmake(a',g');                 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -132,13 +132,61 @@ Psr = otpm(xr,prob,n2,1,n1);
 Psd = otpm(xd,prob,n2,1,n1);
 
 Eq    = (pie'*q0)';
-Ebp   = pie'*A(x);
+Eap   = pie'*A(x);
 Dr    = pie'*D(x);
+
+
+% %% Simulation 
+% 
+    N = 200;    % number of simulations
+    T = 100;    % Sample simulation
+    J = 0;      % Drop first J simulations
+    L = 1;      % Dynamic lags for cross-correlations
+%    
+    s0 = getindex([Eap meg],[A G]);
+% 
+    nv = 6;   % Number of variables to compute sample moments
+%      
+    M  = zeros(nv,1,N);
+    SD = zeros(nv,1,N);
+    XC = zeros(nv,1+2*L,N);
+    AC = zeros(1+2*L,nv,N);
+% 
+%       
+    for i = 1:N
+               
+        st = simulmarkov(Pstar,T,2)';
+%                             
+        dt = D(st);
+        yt = G(st)./meg;
+        ct = yt + A(st) - (G(st).*A(x(st))).*Eq(x(st));
+        CAt  = A(x(st))-A(st);
+        TBt  = yt - ct;
+        drst = ((1./Eq(x(st))-1)-(rate));
+% 
+        [M(:,:,i),SD(:,:,i),XC(:,:,i),AC(:,:,i)]=samplemoms([yt ct CAt TBt drst dt],1,L);
+%         
+    end
+%    
+%    % Take averages of the N-simulations over the third dimensions
+%    
+    mn    = mean(M,3) ;
+    sd    = mean(SD,3);
+    xcorr = mean(XC,3);
+    acorr = mean(AC,3);
+
+
+%% Figures
 
 figure(1);
 subplot(1,3,1); plot(pie); 
 subplot(1,3,2); spy(Pstar); 
 subplot(1,3,3); plot(a,Eq)
+
+
+
+
+
 
 %% Tablas
 
@@ -155,6 +203,7 @@ fprintf('\nEndowment autocorrelation          %5.2f'   ,rho)
 fprintf('\n')
 fprintf('\n           Ergodic Moments          \n') 
 fprintf('\nNumber of iterations over q        %5.0f'   ,it)
-fprintf('\nExpected Net Foreign Assets        %5.2f'   ,Ebp)
+fprintf('\nExpected Net Foreign Assets        %5.2f'   ,Eap)
+fprintf('\nEq price of sovereign bond         %5.2f'   ,Eq(getindex(Eap,A)))
 fprintf('\nErgodic default rate (pct)         %5.2f'   ,Dr*100)
 fprintf('\n')

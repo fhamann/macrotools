@@ -4,7 +4,7 @@ function [vs,xs,vc,xc,D] = solvedpos(fc,fs,prob,beta,phi,i0)
 %
 % Usage:
 %
-%   [vs,xs,vc,xc,D] = solvedpos2(fc,fs,prob,beta,phi,i0)
+%   [vs,xs,vc,xc,D] = solvedpos(fc,fs,prob,beta,phi,i0)
 %
 % Syntax: Let m = # possible actions, n = # of possible states, then
 %
@@ -20,7 +20,7 @@ function [vs,xs,vc,xc,D] = solvedpos(fc,fs,prob,beta,phi,i0)
 %      vs      : value function if stops
 %      xs      : policy function if stops
 %      vc      : value function if continues
-%      xc      : policy function if stops
+%      xc      : policy function if continues
 %      D       : states in which vs>vc
 
 % SET CONVERGENCE PARAMETER DEFAULTS
