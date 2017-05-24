@@ -30,18 +30,16 @@
 % Utility function and feasible consumption C>=0
  C = zeros(n,m);
  
- for i=1:m
-    C(:,i) = E+A-q*a(i);
- end
+ for i=1:m; C(:,i) = E+A-q*a(i); end
  
  C(C<=0) = nan;
 
  u = (C.^(1-sigma)-1)./(1-sigma);
  
 % Transition probability matrix (see Sargent and Ljundqvist)
+
  P = kron(speye(m,m),repmat(Pe,m,1));
   
-
 %% STEP 2: Iterate on Bellman equation
 
  [v,x,pstar] = solvedp(u,P,beta,'value'); clear P u C;
@@ -56,7 +54,13 @@
  emean = E'*d;
  sd.c  = sqrt(((E+A-q*a(x)-cmean).^2)'*d);
  sd.e  = sqrt(((E-emean).^2)'*d);
-
+ 
+% addpath /Users/franz/Dropbox/matlab/inequality_package
+%  
+%  D  = cumsum(d);
+%  ga = ginicoeff(D,a(x));
+%  gc = ginicoeff(D,c);
+ 
 %% Plot figures
  plotdp(v,x,pstar,E,A,e,a)
 
@@ -70,6 +74,9 @@
  fprintf('\nPopulation volatility') 
  fprintf('\n Consumption        %8.2f'  ,sqrt(((E+A-q*a(x)-cmean).^2)'*d)) 
  fprintf('\n Earnings           %8.2f\n',sqrt(((E-emean).^2)'*d))
+ fprintf('\nGini coefficients') 
+ fprintf('\n Consumption        %8.2f'  ,sqrt(((E+A-q*a(x)-cmean).^2)'*d)) 
+ fprintf('\n Wealth           %8.2f\n'  ,sqrt(((E-emean).^2)'*d))
  
  %% Simulation
  

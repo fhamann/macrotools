@@ -24,7 +24,7 @@ function [v,x,pstar] = solvedp(f,P,beta,alg,v)
 % SET CONVERGENCE PARAMETER DEFAULTS
   maxit    = 5000;                    % maximum number of iterations
   tol      = 10e-6;                   % convergence tolerance
-  prtiters = 0;                       % print iterations (1) or not (0)
+  prtiters = 1;                       % print iterations (1) or not (0)
 
 [n,m] = size(f);
 if nargin<5 v=zeros(n,1);             % initial v [v=0]

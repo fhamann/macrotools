@@ -8,7 +8,7 @@
  beta	= 0.99;     % discount factor
  R      = 1.004;    % gross asset return rate (vs. R=1)
 
- if R*beta>=1; display('Set beta*R<1 for convergence'); break; end;
+ if R*beta>=1; display('Set beta*R<1 for convergence'); end;
 
 %% Markov chain for y
  [y,Py] = markovchain(2,0.5,0.8,0.5,0.5,0.8);
@@ -24,9 +24,7 @@
 %% Utility function and feasible consumption C>=0
  C = zeros(n,m);
 
- for i=1:m    
-    C(:,i)=Y+R*B-b(i);  
- end
+ for i=1:m; C(:,i)=Y+R*B-b(i); end
 
  C(C<=0) = NaN;
  u  = (C.^(1-sigma)-1)./(1-sigma);
@@ -55,17 +53,16 @@
  s0     = findnearest(bmean,B);   
  spath  = simulmarkov(pstar,T,s0);
 
- ypath  = Y(spath);
- cpath  = ypath + R*B(spath)-b(x(spath));
- CApath = b(x(spath))-B(spath);
+ y_t  = Y(spath);
+ c_t  = y_t + R*B(spath)-b(x(spath));
+ CA_t = b(x(spath))-B(spath);
 
- sd.y = std(ypath);
- sd.c = std(cpath);
+ sd.y = std(y_t);
+ sd.c = std(c_t);
 
- figure(2)
- plot([ypath cpath])
+ figure(2); plot([y_t c_t])
 
- [sdev,corrcont,corr,acov] = samplemoms([ypath cpath CApath],1,3);
+ [sdev,corrcont,corr,acov] = samplemoms([y_t c_t CA_t],1,3);
 
 %% Model steady state statistics  
  fprintf('\nSteady-state Model Statistics \n ')
