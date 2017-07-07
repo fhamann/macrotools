@@ -4,21 +4,21 @@
  fprintf('\nOccupational choice model \n')
 
 %% Parameters
- sigma	= 2;            % risk aversion
- beta	= 0.99;         % discount factor
- R      = 1.007;        % gross asset return rate
- tau    = 0.35;         % income tax
- kappa  = 0.01;         % switching cost
+ sigma	= 2;                               % risk aversion
+ beta	= 0.99;                            % discount factor
+ R      = 1.01;                            % gross asset return rate
+ tau    = 0.35;                            % income tax
+ kappa  = 0.01;                            % switching cost
 
- if R*beta>=1; warning('Set beta*R<1 for convergence'); end;
+ if R*beta>=1; disp('Set beta*R<1 for convergence'); end;
 
 %% Markov chain for y: [y,prob] = markovchain(ny,p,q,e,m,a)
  [y,Py] = markovchain(9,0.7,0.7,0.6);      % Markov chain
- y      = exp(y);                          % set earnings positive
- yf     = y'*ergdist(Py);                  % formal earnings
+ y      = exp(y);                          % earnings if informal
+ yf     = y'*ergdist(Py);                  % earnings if formal 
 
 %% State-space S = YxB
- b       = linspace(-15,10,500)';          % B = {b1<b2<b3<...<bn}
+ b       = linspace(0,20,500)';          % B = {b1<b2<b3<...<bn}
  f       = [0;1];                          % F = {0,1}; 0:formal,1:informal
 
  [Y,B,F] = gridmake(y,b,f);                % state-space grid
@@ -30,18 +30,17 @@
 %% Utility function and feasible consumption C>=0
  C  = zeros(n,m);
   for i=1:m
-
       C(:,i) = ((1-tau)*yf + R*B - bp(i)).*(1-F)*(1-fp(i)) + ...
                (Y + R*B - bp(i)).*(1-F)*fp(i)     + ...
-               (Y+R*B-bp(i)).*F*fp(i)                      + ...
-               ((1-tau)*yf+R*B-bp(i)-kappa*yf).*F*(1-fp(i));
+               (Y+B-bp(i)).*F*fp(i)                      + ...
+               ((1-tau)*yf+B-bp(i)-kappa*yf).*F*(1-fp(i));
   end
 
  C(C<=0) = NaN;
- u  = (C.^(1-sigma)-1)./(1-sigma);
+ u = (C.^(1-sigma)-1)./(1-sigma);
 
 %% Transition probability matrix (see Sargent and Ljundqvist)
- P  = kron(speye(m,m),repmat(Py,m,1));      
+ P = kron(speye(m,m),repmat(Py,m,1));      
 
 %% Bellman equation
  [v,x,pstar] = solvedp(u,P,beta,'policy'); clear P u C;

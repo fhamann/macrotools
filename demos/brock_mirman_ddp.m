@@ -1,4 +1,5 @@
-% BROCK_MIRMAN Brock and Mirman (1972) optimal stochastic growth model 
+% BROCK_MIRMAN_DDP Brock and Mirman (1972) optimal stochastic growth model
+%                  by discrete dynamic programming
 %
 % Written by F. Hamann. Feel free to copy, change and distribute
  fprintf('\nBrock and Mirman model \n')
@@ -12,7 +13,7 @@
  ne = 8;
  zmean   = 1;       
  zstdv   = .2;      
- [z,prob] = markovchain(ne,0.1,0.9,zstdv,zmean)
+ [z,prob] = markovchain(ne,0.5,0.5,zstdv,zmean)
 
 %% State-space S = ZxK
  k = linspace(0.001,0.5,500)';

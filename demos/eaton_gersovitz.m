@@ -184,10 +184,6 @@ subplot(1,3,2); spy(Pstar);
 subplot(1,3,3); plot(a,Eq)
 
 
-
-
-
-
 %% Tablas
 
 fprintf('\n\n\n      Sovereign Default Model \n') 

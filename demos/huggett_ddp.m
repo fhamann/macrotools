@@ -1,7 +1,8 @@
-% HUGGETT.M  PARTIAL EQUILIBRIUM version of Huggett (1993)
-%            See Huggett (1993) The importance of the risk-free rate
-%            in heterogeneous-agent incomplete insurance economies
-%            Journal of Economic Dynamics and Control 17 953-969
+% HUGGETT_DDP.M  PARTIAL EQUILIBRIUM version of Huggett (1993)
+%                by discrete dynamic programming
+%                See Huggett (1993) The importance of the risk-free rate
+%                in heterogeneous-agent incomplete insurance economies
+%                Journal of Economic Dynamics and Control 17 953-969
 %
 % Written by F. Hamann. Feel free to copy, change and distribute.
  fprintf('\nHeterogeneuos agents and incomplete markets model \n')

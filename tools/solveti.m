@@ -1,7 +1,6 @@
-function [x,sp,v,resid] = solveti(model,fspace,s)
 % SOLVETI   Solves stochastic dynamic program by time-iteration
 %
-% Usage:
+% USAGE:
 %                [x,sp,v] = solveti(model,fspace,s)
 %
 % INPUTS
@@ -16,193 +15,180 @@ function [x,sp,v,resid] = solveti(model,fspace,s)
 %  resid   : nplot by ne residuals
 %
 % where ne is the number of discretized exogenous states, e. 
+% MODEL STRUCTURE FIELDS
+%   func           : function file name
+%   discount       : discount factor
+%   e              : exogenous state variable
+%   w              : transition probability matrix    
+%   actions        : vector of discrete actions
+%   params         : additional parameters to function file
+% FUNCTION FILE FORMAT
+%   [out1,out2,out3] = func(flag,s,x,e,additional parameters)
+%   if flag = 'f' returns reward function and derivatives
+%      f, fx, fs
+%   if flag = 'g' returns transition function and derivatives
+%      g, gx, gs
+%   if flag = 'i' returns inverse functions of fx and g
+%      fxi, gi
 %
-% by Juan Camilo Méndez based on Fackler and Miranda CompEcon Toolbox.
+% by Franz Hamann and Juan Camilo Mendez based on Fackler and Miranda CompEcon Toolbox.
 
-%  Set the options
-algor   = tiget('solveti','algor','fsolve');   % Euler Equation solution method
-tol_it  = tiget('solveti','tol_it', 10^-12);   % error tolerance for time iteration
-lambda  = tiget('solveti','lambda',0.5);       % updating weight for time iteration
-maxit   = tiget('solveti','maxit',1000000);    % maximum iters.  for time iteration
-nplot   = tiget('solveti','nplot',2000);       % # of nodes to evaluate errors (0 = do not do errors)
-prntit  = tiget('solveti','prntit',20);        % prints every prntit iters. (0 = do not print)
+function [x,sp,v,resid,s] = solveti(model,fspace,s)
 
+% SET THE DEFAULT OPTIONS
+  tol_it  = tiget('solveti','tol_it', 10^-12);   % error tolerance for time iteration
+  lambda  = tiget('solveti','lambda',0.5);       % updating weight for time iteration
+  maxit   = tiget('solveti','maxit',10000);      % maximum iters.  for time iteration
+  nplot   = tiget('solveti','nplot',2000);       % # of nodes to evaluate errors (0 = do not do errors)
+  prntit  = tiget('solveti','prntit',25);        % prints every prntit iters. (0 = do not print)
 
-if ~isfield(model,'e'); model.e = 0; e = 0;
-    else e = model.e'; end;
-if ~isfield(model,'w'); model.w = 1;
-    else w = model.w; end
-if ~isfield(model,'discount'); warning('model must have a discount factor');
-    else beta = model.discount; end
+  if ~isfield(model,'e');         model.e = 0; e = 0;                  else e = model.e';          end;
+  if ~isfield(model,'w');         model.w = eye(length(e));            else w = model.w;           end;
+  if ~isfield(model,'discount');  warning('Need a discount factor');   else beta = model.discount; end;
 
-func   = model.func;
-params = model.params;
+  func   = model.func;
+  params = model.params;
 
-% Determine number of dimensions and coordinates
-ns   = fspace.n;
-ne   = length(e);
-n    = ns*ne;
-npar = length(params);
-smin = fspace.a;
-smax = fspace.b;
+% DETERMINE NUMBER OF DIMENSIONS & COORDINATES
+  ns   = fspace.n;                          % Number of endogenous state variable nodes 
+  ne   = length(e);                         % Number of exogenous state variable nodes 
+  n    = ns*ne;                             % Number of state nodes
+  npar = length(params);                    % Number of parameters
+  smin = fspace.a;                          % Lower endogenous state variable limit
+  smax = fspace.b;                          % Higher endogenous state variable limit
 
-if ~isfield(model,'actions'); sp = repmat(0.9*smin+0.1*(smax+smin)/2,ns,ne);
-    else sp = model.actions; end
+  if ~isfield(model,'actions'); sp = repmat(s,1,ne); else sp = model.actions; end
+  if size(sp,1)>ns; warning('actions must have the same length of states'); end
 
-if size(sp,1)>ns; warning('actions must have the same length of states');
-end
+  if nplot == 0 && nargout>3; display(['Need error-evaluation nodes for Euler error evaluation']); return; end; 
 
-if nplot == 0 && nargout>3 ; display(['Error analysis can not be computed, set the number of error-evaluation nodes higher than zero']);
-return; end; 
+% MATRIX REPLICATION
+ ss = repmat(s,1,ne);                       % replicate the endogenous state variable 
+ ee = repmat(e,ns,1);                       % replicate the exogenous state variable
+ ww = repmat(w',ns,1);                      % replicate the transition probability matrix 
 
-ss = repmat(s,1,ne);
-ee = repmat(e,ns,1);
-ww = repmat(w',ns,1);
-sp = ss;
+% TIME ITERATION ALGORITHM  
+ if (nargin(func)-npar) > 4                                                  % MODEL WITH THE SPECIFICATION OF THE INVERSE OF FX AND G 
+   disp(' Iter     Norm');
+   for it = 1:maxit                                                          % perform iterations
+    spold = sp;                                                              % store old policy function values
+    [~,xx]    = feval(func,'i',ss,[],ee,sp,sp,params{:}); xx = max(xx,eps);  % find the control variable values given the stored policy function
+   
+    [f,fx,fs] = feval(func,'f',ss,xx,ee,[],[],params{:});                    % evaluate the reward function 
+    [g,gx,gs] = feval(func,'g',ss,xx,ee,[],[],params{:});                    % evaluate the transition function    
+   
+    mu  = -fx./gx;                                                           % calculate the Lagrange multiplier using the reward and the transition function
+    mup = interp1(s,mu,sp,'linear','extrap');                                % interpolate the Lagrange multiplier
 
-if (nargin(func)-npar) > 4
+    MUP = reshape(mup,n,ne);                                                 % make the Lagrange multiplier interpolant conformable
+    GSP = reshape((interp1(s,gs,sp,'linear','extrap')),n,ne);                % interpolate the transition function derivative according to the state given the policy function
+    FSP = reshape((interp1(s,fs,sp,'linear','extrap')),n,ne);                % interpolate the reward function derivative according to the state given the policy function
+    aux = (FSP + (GSP.*MUP))';                                               % create an auxiliar variable that incorporates the previous interpolation results
+    Emu = reshape(sum(reshape(ww(:).*aux(:),ne,n)),ns,ne);                   % calculate the expected value of the Lagrange multiplier
+    [xopt,~]   = feval(func,'i',ss,xx,ee,-beta*gx.*Emu,sp,params{:});        % find the optimal control variable values
+    xopt = max(eps,xopt);           
+    [sp,gx,gs] = feval(func,'g',ss,xopt,ee,[],[],params{:});                 % find the policy function values given the optimal control variable values
+    sp = max(sp,smin);
+     
+    error_it   = max(max(abs(sp-spold)))/max(max(abs(spold)));               % compute the iteration errors
 
-for it = 1:maxit
-
-  spold = sp;
-  [~,xx]    = feval(func,'i',ss,[],ee,sp,sp,params{:}); xx = max(xx,0);
-  
-
-  [f,fx,fs] = feval(func,'f',ss,xx,ee,[],[],params{:});
-  [g,gx,gs] = feval(func,'g',ss,xx,ee,[],[],params{:});
-
-  
-  mu  = -fx./gx;
-  mup = interp1(s,mu,sp,'linear','extrap');
-
-  MUP = reshape(mup,n,ne);   
-  GSP = reshape((interp1(s,gs,sp,'linear','extrap')),n,ne);
-  FSP = reshape((interp1(s,fs,sp,'linear','extrap')),n,ne);
-  aux = (FSP + (GSP.*MUP))';
-
-
-  Emu = reshape(sum(reshape(ww(:).*aux(:),ne,n)),ns,ne);
-
-  [xopt,~] = feval(func,'i',ss,xx,ee,-beta*gx.*Emu,sp,params{:});
-   xopt = max(0,xopt);
-
-  [sp,gx,gs] = feval(func,'g',ss,xopt,ee,[],[],params{:}); 
+    if mod(it, prntit) == 0; fprintf('%5i %10.1e\n',it,error_it); end % print the iteration error each prntit iterations (see tiset)
+    if abs(error_it)<tol_it; break; end                                      % convergence check
  
-  sp = max(sp,smin);
+    sp = lambda*sp + (1-lambda)*spold;                                       % update the policy function
+   end
+  fprintf('%5i %10.1e\n',it,error_it);                                % Print last iteration result
+  EE    = mu - beta*Emu;                                                     % compute the Euler Equation values
+  [~,x] = feval(func,'i',ss,[],ee,sp,sp,params{:}); x = max(x,eps);          % find the optimal control variable values 
+  F     = feval(func,'f',ss,x,ee,[],[],params{:});                           % evaluate the reward function
+  v     = F/(eye(ne)-beta*w);                                                % calculate the optimal value function
   
-  error_it = max(max(abs(sp-spold)))/max(max(abs(spold)));
-
-  if mod(it, prntit) == 0; fprintf('%d  %1.7f \n',it,error_it); end
-  if abs(error_it)<tol_it; break; end
- 
-  sp = lambda*sp + (1-lambda)*spold;
-end
-   EE    = mu - beta*Emu;
-   [~,x] = feval(func,'i',ss,[],ee,sp,sp,params{:}); x = max(x,0);
-    u    = feval(func,'f',ss,x,ee,[],[],params{:});
-    v    = u/(eye(ne)-beta*w);
-
-if nplot > 0     % Error Analysis
-    splot  = linspace(smin*0.25,smax,nplot)'; 
-    SS     = repmat(splot,1,ne);
-    E      = repmat(e,nplot,1);
-    SP     = interp1(s,sp,splot);
-    W      = repmat(w',nplot,1);
-    [~,XX] = feval(func,'i',SS,[],E,SP,SP,params{:});
-    XX     = max(XX,0);
-
-    [F,Fx,Fs]  = feval(func,'f',SS,XX,E,[],[],params{:});
-    [Sp,Gx,Gs] = feval(func,'g',SS,XX,E,[],[],params{:});
-
-    MU    = -Fx./Gx;
-    MUP   = reshape((interp1(splot,MU,Sp,'linear','extrap')),ne*nplot,ne);
-    GSP   = reshape((interp1(splot,Gs,Sp,'linear','extrap')),ne*nplot,ne);
-    FSP   = reshape((interp1(splot,Fs,Sp,'linear','extrap')),ne*nplot,ne);
-    AUX   = (FSP + (MUP.*GSP))';
-    EMU   = reshape(sum(reshape(W(:).*AUX(:),ne,nplot*ne)),nplot,ne);
-    resid = MU - beta*EMU;
- end
-
-elseif (nargin(func)-npar) <= 4
-
-syms ssym xsym esym
-gsym = symfun(feval(func,'g',ssym,xsym,esym,params{:}),[ssym xsym esym]);
-gi   = matlabFunction(finverse(gsym,xsym));
-
-[fsym,fxsym,fssym] = feval(func,'f',ssym,xsym,esym,params{:});
-fxi = matlabFunction(finverse(fxsym,xsym));
-
-for it = 1:maxit
-
-  spold = sp;
-
-  xx = max(feval(gi,ss,sp,ee),0);
-
-  [f,fx,fs]  = feval(func,'f',ss,xx,ee,params{:});
-  [sp,gx,gs] = feval(func,'g',ss,xx,ee,params{:});
-  mu  = -fx./gx;
-  mup = interp1(s,mu,sp,'linear','extrap');
-  MUP = reshape(mup,n,ne);   
-  GSP = reshape((interp1(s,gs,sp,'linear','extrap')),n,ne);
-  FSP = reshape((interp1(s,fs,sp,'linear','extrap')),n,ne);
-  aux = (FSP + (GSP.*MUP))';
-  Emu = reshape(sum(reshape(ww(:).*aux(:),ne,n)),ns,ne);
-
-  xopt = feval(fxi,ee,ss,-beta*gx.*Emu);
+  % ERROR ANALYSIS
+  if nplot > 0                                                               
+   splot  = linspace(smin,smax,nplot)';                                      % create an equidistant grid to evaluate the errors
+   SS     = repmat(splot,1,ne);                                              % endogenous state variable matrix replication
+   E      = repmat(e,nplot,1);                                               % exogenous state variable matrix replication
+   W      = repmat(w',nplot,1);                                              % transition probability matrix replication
+   SP     = interp1(s,sp,splot,'linear','extrap');                           % interpolate the error evaluation grid in the optimal policy function values
+   
+   [~,XX] = feval(func,'i',SS,[],E,SP,SP,params{:});
+   XX     = max(XX,0);
+   
+   [F,Fx,Fs]  = feval(func,'f',SS,XX,E,[],[],params{:});
+   [Sp,Gx,Gs] = feval(func,'g',SS,XX,E,[],[],params{:});
   
-  [sp,gx,gs] = feval(func,'g',ss,xopt,ee,params{:});
-  sp = max(sp,smin);
+   MU    = -Fx./Gx;
+   MUP   = reshape((interp1(splot,MU,Sp,'linear','extrap')),ne*nplot,ne);
+   GSP   = reshape((interp1(splot,Gs,Sp,'linear','extrap')),ne*nplot,ne);
+   FSP   = reshape((interp1(splot,Fs,Sp,'linear','extrap')),ne*nplot,ne);
+   AUX   = (FSP + (MUP.*GSP))';
+   EMU   = reshape(sum(reshape(W(:).*AUX(:),ne,nplot*ne)),nplot,ne);    
+   resid = MU - beta*EMU;                                                    % compute the residual
+  end
 
-  error_it = max(max(abs(sp-spold)))/max(max(abs(spold)));
+ elseif (nargin(func)-npar) <= 4                                             % MODEL WITHOUT THE SPECIFICATION OF THE INVERSE OF FX AND G (uses Matlab symbolic toolbox)
+  syms ssym xsym esym                                                        % convert into symbols the states variables and the control
+  gsym = symfun(feval(func,'g',ssym,xsym,esym,params{:}),[ssym xsym esym]);  % express the transition function as a symbolic function 
+  gi   = matlabFunction(finverse(gsym,xsym));                                % rewrite the transition function in terms of the policy function.
 
-  if mod(it, prntit) == 0; fprintf('%d  %1.7f \n',it,error_it); end
-  if abs(error_it)<tol_it; break; end
- 
-  sp = lambda*sp + (1-lambda)*spold;
+  [~,fxsym,~] = feval(func,'f',ssym,xsym,esym,params{:});                    % express the reward function and its derivatives as a symbolic function 
+  fxi = matlabFunction(finverse(fxsym,xsym));                                % rewrite the reward function derivative in terms of the policy function.
+  disp('Iter         Norm');
   
-end
-    EE  = mu - beta*Emu;
-    x   = max(feval(gi,ss,sp,ee),0);
-    u   = feval(func,'f',ss,x,ee,params{:});
-    v   = u/(eye(ne)-beta*w);
+  for it = 1:maxit
+   spold = sp;
+   xx = max(feval(gi,ss,sp,ee),0);                                          
 
-if nplot > 0   % Error analysis
-    splot = linspace(smin*0.2,smax,nplot)'; 
-    SS    = repmat(splot,1,ne);
-    E     = repmat(e,nplot,1);
-    SP    = interp1(s,sp,splot,'linear','extrap');
-    SP    = min(max(SP,smin),smax);
-    W     = repmat(w',nplot,1);
-    XX    = max(feval(gi,SS,SP,E),0);
+   [f,fx,fs]  = feval(func,'f',ss,xx,ee,params{:});
+   [sp,gx,gs] = feval(func,'g',ss,xx,ee,params{:});
+   
+   mu   = -fx./gx;
+   mup  = interp1(s,mu,sp,'linear','extrap');
+   MUP  = reshape(mup,n,ne);   
+   GSP  = reshape((interp1(s,gs,sp,'linear','extrap')),n,ne);
+   FSP  = reshape((interp1(s,fs,sp,'linear','extrap')),n,ne);
+   aux  = (FSP + (GSP.*MUP))';
+   Emu  = reshape(sum(reshape(ww(:).*aux(:),ne,n)),ns,ne);
+   if nargin(fxi) >1;  
+     xopt = feval(fxi,ee,ss,-beta*gx.*Emu);
+   else 
+     xopt = feval(fxi,-beta*gx.*Emu);
+   end;
+   [sp,gx,~] = feval(func,'g',ss,xopt,ee,params{:}); sp = max(sp,smin);
+  
+   error_it  = max(max(abs(sp-spold)))/max(max(abs(spold)));
 
-    [F,Fx,Fs]  =  feval(func,'f',SS,XX,E,params{:});
-    [Sp,Gx,Gs] = feval(func,'g',SS,XX,E,params{:});
+   if mod(it, prntit) == 0; fprintf('%5i %10.1e\n',it,error_it); end
+   if abs(error_it)<tol_it; break; end
+   sp = lambda*sp + (1-lambda)*spold;
+  
+  end
+  fprintf('%d         %1.7f \n',it,error_it);    % Print last iteration result
+  EE  = mu - beta*Emu;
+  x   = max(feval(gi,ss,sp,ee),0);
+  F   = feval(func,'f',ss,x,ee,params{:});
+  v   = F/(eye(ne)-beta*w);
 
-    MU    = -Fx./Gx;
-    MUP   = reshape((interp1(splot,MU,Sp,'linear','extrap')),ne*nplot,ne);
-    GSP   = reshape((interp1(splot,Gs,Sp,'linear','extrap')),ne*nplot,ne);
-    FSP   = reshape((interp1(splot,Fs,Sp,'linear','extrap')),ne*nplot,ne);
-    AUX   = (FSP+(GSP.*MUP))';
-    EMU   = reshape(sum(reshape(W(:).*AUX(:),ne,nplot*ne)),nplot,ne);
-    resid = MU - beta*EMU;
- end
-end 
+% ERROR ANALYSIS  
+  
+  if nplot > 0   
+   splot = linspace(smin*0.2,smax,nplot)'; 
+   SS    = repmat(splot,1,ne);
+   E     = repmat(e,nplot,1);
+   SP    = interp1(s,sp,splot,'linear','extrap');
+   SP    = min(max(SP,smin),smax);
+   W     = repmat(w',nplot,1);
+   XX    = max(feval(gi,SS,SP,E),0);
 
+   [F,Fx,Fs]  =  feval(func,'f',SS,XX,E,params{:});
+   [Sp,Gx,Gs] = feval(func,'g',SS,XX,E,params{:});
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+   MU    = -Fx./Gx;
+   MUP   = reshape((interp1(splot,MU,Sp,'linear','extrap')),ne*nplot,ne);
+   GSP   = reshape((interp1(splot,Gs,Sp,'linear','extrap')),ne*nplot,ne);
+   FSP   = reshape((interp1(splot,Fs,Sp,'linear','extrap')),ne*nplot,ne);
+   AUX   = (FSP+(GSP.*MUP))';
+   EMU   = reshape(sum(reshape(W(:).*AUX(:),ne,nplot*ne)),nplot,ne);
+   resid = MU - beta*EMU;
+  end
+ end 

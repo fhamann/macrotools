@@ -27,14 +27,12 @@ function [vs,xs,vc,xc,D] = solvedpos(fc,fs,prob,beta,phi,i0)
 
 maxit    = 10000;            % maximum number of iterations
 tol      = 10e-6;            % convergence tolerance, usually tol=sqrt(eps)
-prtiters = 0;                % print iterations (1) or not (0)
+prtiters = 1;                % print iterations (1) or not (0)
 
 [n,m] = size(fc);
 
-vs = ones(n,1);
-vc = ones(n,1);
-% vc = (1:n)';
-% v0 = getv0(i0,vs,n,m);
+vs = max(fs,[],2);
+vc = max(fc,[],2);
     
 if prtiters, disp('Solving problem by value function iteration'); end
       
