@@ -68,11 +68,11 @@ params = model.params;
  ww = repmat(w',ns,1);                      % replicate the transition probability matrix 
  
 % TIME ITERATION ALGORITHM  
-   if (nargin(func)-npar) > 4                                                  % MODEL WITH THE SPECIFICATION OF THE INVERSE OF FX AND G 
-   disp('Iteration   Norm');
+ if (nargin(func)-npar) > 4                                                  % MODEL WITH THE SPECIFICATION OF THE INVERSE OF FX AND G 
+   disp('Iteration Norm');
      
 % COMPUTE BOUNDS
-   [xl,xu] = feval(func,'b',ss,[],ee,sp,sp,params{:});
+[xl,xu] = feval(func,'b',ss,[],ee,sp,sp,params{:});
 
    for it = 1:maxit                                                          % perform iterations
     spold = sp;                                                              % store old policy function values
@@ -96,12 +96,12 @@ params = model.params;
      sp = min(max(sp,smin),smax);
     error_it   = max(max(abs(sp-spold)))/max(max(abs(spold)));               % compute the iteration errors
 
-    if mod(it, prntit) == 0; fprintf('%5i   %10.1e\n',it,error_it); end % print the iteration error each prntit iterations (see tiset)
+    if mod(it, prntit) == 0; fprintf('%5i %10.1e\n',it,error_it); end % print the iteration error each prntit iterations (see tiset)
     if abs(error_it)<tol_it; break; end                                      % convergence check
  
     sp = lambda*sp + (1-lambda)*spold;                                       % update the policy function
    end
-  fprintf('%5i   %10.1e\n',it,error_it);                                % Print last iteration result
+  fprintf('%5i %10.1e\n',it,error_it);                                % Print last iteration result
   EE    = mu - beta*Emu;                                                     % compute the Euler Equation values
   [~,x] = feval(func,'i',ss,[],ee,sp,sp,params{:}); x = min((max(x,xl)),xu); % find the optimal control variable values 
   F     = feval(func,'f',ss,x,ee,[],[],params{:});                           % evaluate the reward function
@@ -170,12 +170,12 @@ params = model.params;
   
    error_it  = max(max(abs(sp-spold)))/max(max(abs(spold)));
 
-   if mod(it, prntit) == 0; fprintf('%5i   %10.1e\n',it,error_it); end
+   if mod(it, prntit) == 0; fprintf('%5i %10.1e\n',it,error_it); end
    if abs(error_it)<tol_it; break; end
    sp = lambda*sp + (1-lambda)*spold;
   
   end
-  fprintf('%5i     %10.1e\n',it,error_it);    % Print last iteration result
+  fprintf('%d         %1.7f \n',it,error_it);    % Print last iteration result
   EE  = mu - beta*Emu;
   x   = feval(gi,ss,sp,ee); x = min((max(x,xl)),xu);
   F   = feval(func,'f',ss,x,ee,params{:});
