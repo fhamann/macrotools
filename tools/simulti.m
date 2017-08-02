@@ -20,7 +20,11 @@
 %
 % where ne is the number of discretized exogenous states, e. 
 
+<<<<<<< Updated upstream
 function [x_t,s_t] = simulti(enodes,snodes,sp,x,Q,T,ie,is)
+=======
+function [e_t,s_t,sp_t,x_t,ie_t,is_t] = simulti(enodes,snodes,sp,x,Q,T,ie,is)
+>>>>>>> Stashed changes
 
 if nargin<6; T = 10000; end
 
@@ -33,6 +37,8 @@ e_t  = zeros(T,1);      % exogenous state variable
 s_t  = zeros(T,1);      % endogenous state variable
 x_t  = zeros(T,1);      % action 
 sp_t = zeros(T,1);      % tomorrow's endogenous state
+ie_t = zeros(T,1);      % exogenous state variable position
+is_t = zeros(T,1);      % endogenous state variable position
 
 rng('default');         % set seed of random number generator 
 
@@ -46,7 +52,9 @@ for t=1:T
     s_t(t)  = s;
     x_t(t)  = interp1(snodes,x(:,ie),s);
     sp_t(t) = interp1(snodes,sp(:,ie),s);    
+    ie_t(t) = ie;
     s       = sp_t(t);
+    is_t(t) = getindex(s,snodes);
     ie      = sum(CQ(ie,:)<rand())+1; % Find next price using a U(0,1)
     e       = enodes(ie); 
 end

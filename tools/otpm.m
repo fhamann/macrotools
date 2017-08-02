@@ -1,4 +1,4 @@
-function P = otpm(x,prob,nb,ns,nz)
+function P = otpm(x,prob,ns1,ns2,nz)
 
 % OTPM Optimal Transition Probability Matrix
 %
@@ -6,20 +6,20 @@ function P = otpm(x,prob,nb,ns,nz)
 %           P = otpm(x,prob,nb,ns,nz)
 %
 %   INPUTS
-%       x      : optimal policy function (column vector)
+%       x      : optimal policy function (nb*ns*nz by 1  vector)
 %       prob   : transition probability matrix for exogenous process
-%       nb     : Number of grid points in the first endogenous variable 
-%       ns     : Number of grid points in the first endogenous variable 
-%       nz     : Number of grid points in the space of exogenous variables 
+%       nb     : # of grid pts in the first endogenous state variable 
+%       ns     : # of grid pts in the second endogenous state variable 
+%       nz     : # of grid pts in the space of exogenous state variables 
 %
 %   OUTPUT
-%       P      : Optimal transtion matrix
+%       P      : Optimal transtion matrix P(s,z)
 
 
 n   = length(x);
-PP  = [prob;zeros((nb*ns-1)*nz,nz)];
+PP  = [prob;zeros((ns1*ns2-1)*nz,nz)];
 PP2 = reshape(PP,nz,n);
-PP3 = kron(PP2,ones(nb*ns,1));
+PP3 = kron(PP2,ones(ns1*ns2,1));
 
 P = zeros(n);
 
