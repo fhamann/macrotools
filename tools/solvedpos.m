@@ -47,9 +47,9 @@ for it=1:maxit
     [vs,xs] = max(fs+phi*(beta.*Evc)+(1-phi)*(beta.*Evs),[],2);
     [vc,xc] = max(fc+beta.*Evc,[],2);
       
-    D = vs>vc  | isnan(vc)==1;
-      
-    vc(find(vs>vc | isnan(vc)==1))=vs(find(vs>vc | isnan(vc)==1));
+    D = vs>=vc  | isnan(vc)==1;
+    vc(find(  D))=vs(find(D));  
+%    vc(find(  vs>=vc | isnan(vc)==1))=vs(find(vs>=vc | isnan(vc)==1));
     
     v0  = getv0(i0,vs,n,m);
     vs  = v0;      

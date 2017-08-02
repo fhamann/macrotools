@@ -35,7 +35,7 @@
 function [x,sp,v,resid,s] = solveti(model,fspace,s)
 
 % SET THE DEFAULT OPTIONS
-  tol_it  = tiget('solveti','tol_it', 10^-8);    % error tolerance for time iteration
+  tol_it  = tiget('solveti','tol_it', 10^-6);    % error tolerance for time iteration
   lambda  = tiget('solveti','lambda',0.5);       % updating weight for time iteration
   maxit   = tiget('solveti','maxit',10000);      % maximum iters.  for time iteration
   nplot   = tiget('solveti','nplot',2000);       % # of nodes to evaluate errors (0 = do not do errors)
@@ -68,7 +68,7 @@ params = model.params;
  ww = repmat(w',ns,1);                      % replicate the transition probability matrix 
  
 % TIME ITERATION ALGORITHM  
-   if (nargin(func)-npar) > 4                                                  % MODEL WITH THE SPECIFICATION OF THE INVERSE OF FX AND G 
+   if (nargin(func)-npar) > 4                                                % MODEL WITH THE SPECIFICATION OF THE INVERSE OF FX AND G 
    disp('Iteration   Norm');
      
 % COMPUTE BOUNDS

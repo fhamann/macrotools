@@ -20,7 +20,7 @@
 %
 % where ne is the number of discretized exogenous states, e. 
 
-function [hs,hx,hs2x] = simulti(enodes,snodes,sp,x,Q,T,ie,is)
+function [x_t,s_t] = simulti(enodes,snodes,sp,x,Q,T,ie,is)
 
 if nargin<6; T = 10000; end
 
