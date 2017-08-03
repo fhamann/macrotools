@@ -27,7 +27,7 @@ function [vs,xs,vc,xc,D] = solvedpos(fc,fs,prob,beta,phi,i0)
 
 maxit    = 10000;            % maximum number of iterations
 tol      = 10e-6;            % convergence tolerance, usually tol=sqrt(eps)
-prtiters = 1;                % print iterations (1) or not (0)
+prtiters = 0;                % print iterations (1) or not (0)
 
 [n,m] = size(fc);
 
