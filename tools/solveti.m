@@ -6,6 +6,7 @@
 %  model   : structured array with model specifications (see CompEcon)
 %  fspace  : function space (example: fspace = fundefn('lin',n,smin,smax)
 %  s       : ns by 1 vector of state variable nodes
+%  xex     : exogenous variable
 %
 % OUTPUTS
 %  x       : ns by ne optimal controls

@@ -48,8 +48,8 @@ for it=1:maxit
     [vs,xs] = max(fs+phi*(beta.*Ev0)+(1-phi)*(beta.*Evs),[],2);
     [vc,xc] = max(fc+beta.*Evc,[],2);
       
-    D = vs>=vc  | isnan(vc)==1;
-    vc(find(D))=vs(find(D));  
+    D = vs>vc  | isnan(vc)==1;   % Compute default decision
+    vc(find(D))=vs(find(D));     % Max(vc,vs)
     
     v0  = getv0(i0,vc,n,m);     
     v = [vs vc];  vold = [vsold vcold]; if isnan(v), break, end;

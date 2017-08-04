@@ -33,6 +33,7 @@ prtiters = 0;                % print iterations (1) or not (0)
 
 vs = max(fs,[],2);
 vc = max(fc,[],2);
+v0 = getv0(i0,vc,n,m);
     
 if prtiters, disp('\nSolving problem by value function iteration'); end
       
@@ -42,16 +43,16 @@ for it=1:maxit
         
     Evc = kron(prob*(reshape(vc,m,n/m)'),ones(m,1));
     Evs = kron(prob*(reshape(vs,m,n/m)'),ones(m,1));
-%     EV  = kron(prob*(reshape(v0,m,n/m)'),ones(m,1));
+    Ev0 = kron(prob*(reshape(v0,m,n/m)'),ones(m,1));
       
-    [vs,xs] = max(fs+phi*(beta.*Evc)+(1-phi)*(beta.*Evs),[],2);
+    [vs,xs] = max(fs+phi*(beta.*Ev0)+(1-phi)*(beta.*Evs),[],2);
     [vc,xc] = max(fc+beta.*Evc,[],2);
       
-    D = vs>=vc  | isnan(vc)==1;
+    D = vs>vc  | isnan(vc)==1;
+    D
     vc(find(D))=vs(find(D));  
     
-    v0  = getv0(i0,vs,n,m);
-    vs  = v0;      
+    v0  = getv0(i0,vc,n,m);     
     v = [vs vc];  vold = [vsold vcold]; if isnan(v), break, end;
       
     change = norm(v-vold);                
