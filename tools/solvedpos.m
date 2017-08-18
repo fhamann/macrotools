@@ -1,4 +1,4 @@
-function [vs,xs,vc,xc,D] = solvedpos(fc,fs,prob,beta,phi,i0)
+function [vs,xs,vc,xc,V,D] = solvedpos(fc,fs,prob,beta,phi,i0)
 
 % SOLVEDP  Solves optimal stopping program by state-space discretization.
 %
@@ -33,6 +33,7 @@ prtiters = 0;                % print iterations (1) or not (0)
 
 vs = max(fs,[],2);
 vc = max(fc,[],2);
+V  = vc; 
 v0 = getv0(i0,vc,n,m);
     
 if prtiters, disp('\nSolving problem by value function iteration'); end
@@ -42,16 +43,20 @@ for it=1:maxit
     vsold=vs;    vcold=vc;
         
     Evc = kron(prob*(reshape(vc,m,n/m)'),ones(m,1));
+    EV  = kron(prob*(reshape(V,m,n/m)'),ones(m,1));
     Evs = kron(prob*(reshape(vs,m,n/m)'),ones(m,1));
-    Ev0 = kron(prob*(reshape(v0,m,n/m)'),ones(m,1));
+    EV0 = kron(prob*(reshape(v0,m,n/m)'),ones(m,1));
       
-    [vs,xs] = max(fs+phi*(beta.*Ev0)+(1-phi)*(beta.*Evs),[],2);
+    [vs,xs] = max(fs+phi*(beta.*EV0)+(1-phi)*(beta.*Evs),[],2);
     [vc,xc] = max(fc+beta.*Evc,[],2);
+     
+    V = vc;
+    D = vs>vc  | isnan(vc)==1;
       
-    D = vs>vc  | isnan(vc)==1;   % Compute default decision
-    vc(find(D))=vs(find(D));     % Max(vc,vs)
+    V(find(D)) = vs(find(D));
     
-    v0  = getv0(i0,vc,n,m);     
+    v0  = getv0(i0,V,n,m);
+   
     v = [vs vc];  vold = [vsold vcold]; if isnan(v), break, end;
       
     change = norm(v-vold);                

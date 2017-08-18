@@ -122,14 +122,11 @@ end
 
 % 10. Optimal Policy Function
 
-% x = (1-D).*xr+D.*azero;
+x     = (1-D).*xr+D.*azero;       % policy function    
 
-x     = (1-D).*xr+D.*xd;          % policy function    
-Pstar = otpm(x,prob,n2,1,n1);     % optimal transition prob matrix
+%%%%% Pstar not working!!!!!!!
+Pstar = otpm1v(x,prob,n2,n1);     % optimal transition prob matrix
 pie   = ergdist(Pstar);           % ergodic distribution
-
-Psr = otpm(xr,prob,n2,1,n1);
-Psd = otpm(xd,prob,n2,1,n1);
 
 Eq    = (pie'*q0)';
 Eap   = pie'*A(x);
