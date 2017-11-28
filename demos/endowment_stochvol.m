@@ -10,7 +10,7 @@
  beta	= 0.985;     % factor de descuento
  R      = 1.0125;    % tasa de retorno del activo (vs. R=1)
 
- if R*beta>=1; display('Set beta*R<1 for convergence'); break; end;
+ if R*beta>=1; display('Set beta*R<1 for convergence'); end;
 
 %% Cadena de Markov de y
  ny = 4;

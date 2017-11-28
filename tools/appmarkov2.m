@@ -1,4 +1,4 @@
-function [Tran,s,probst,alambda,asigmay]=appmarkov2(const,lambda,sigma,m,N)
+function [Tran,s,probst,alambda,asigmay]=appmarkov2(const,lambda,sigma,m,N,meg)
 
 % APPMARKOV2 approximates a nonzero-mean AR(1) process with Markov chain
 %
@@ -30,26 +30,39 @@ tol   = sqrt(eps);
 
 % Discretize the state space
 
-stvy = sqrt(sigma^2/(1-lambda^2)); % standard deviation of y_t
-
+stvy  = sqrt(sigma^2/(1-lambda^2)); % standard deviation of y_t
+% stvy = (exp(2*(log(meg)-0.5*stvyy^2)+2*(stvyy)^2)-exp(2*(log(meg)-0.5*stvyy^2)+(stvyy)^2))^(0.5)
 % Equally space grid of points
 % ymax=m*vary,ymin=-m*vary, ymax and ymin are two boundary points
 ymax = m*stvy;                     % upper boundary of state space
-ymin = -ymax;                      % lower boundary of state space
+ymin = -ymax;                     % lower boundary of state space
 w = (ymax-ymin)/(N-1);             % length of interval 
 s = ymin:w:ymax;                   % the discretized state space
 
+% ymax = cons+m*stvy;                  % upper boundary of state space
+% ymin = cons-m*stvy;                  % lower boundary of state space
+% w = (ymax-ymin)/(N-1);             % length of interval 
+% s = ymin:w:ymax;                   % the discretized state space
 
 % Calculate the transition matrix
 
+% for j=1:N;
+%    for k=2:N-1;
+%          Tran(j,k)= cdfnorm(s(k)-const-lambda*s(j)+w/2,0,sigma)...
+%                   - cdfnorm(s(k)-const-lambda*s(j)-w/2,0,sigma);
+%               
+%    end
+%    Tran(j,1) = cdfnorm(s(1)-const-lambda*s(j)+w/2,0,sigma);
+%    Tran(j,N) = 1 - cdfnorm(s(N)-const-lambda*s(j)-w/2,0,sigma);   
+% end
+
 for j=1:N;
-   for k=2:N-1;
-         Tran(j,k)= cdfnorm(s(k)-const-lambda*s(j)+w/2,0,sigma)...
-         - cdfnorm(s(k)-const-lambda*s(j)-w/2,0,sigma);
-   end
-   Tran(j,1) = cdfnorm(s(1)-const-lambda*s(j)+w/2,0,sigma);
-   Tran(j,N) = 1 - cdfnorm(s(N)-const-lambda*s(j)-w/2,0,sigma);   
+   for k=1:N;
+         Tran(j,k)= normcdf(s(k)+w/2,const+lambda*s(j),sigma)...
+                  - normcdf(s(k)-w/2,const+lambda*s(j),sigma);              
 end
+end
+
 
 if sum(Tran') ~= ones(1,N)
    str = find(abs(sum(Tran')-ones(1,N))>1e-6);  % find rows not adding up to one
