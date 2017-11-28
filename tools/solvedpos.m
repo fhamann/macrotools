@@ -49,10 +49,12 @@ for it=1:maxit
     [vc,xc] = max(fc+beta.*Evc,[],2);
       
     D = vs>vc  | isnan(vc)==1;   % Compute default decision
-    vc(find(D))=vs(find(D));     % Max(vc,vs)
+    vc(D==1)=vs(D==1);           % Max(vc,vs)
     
     v0  = getv0(i0,vc,n,m);     
-    v = [vs vc];  vold = [vsold vcold]; if isnan(v), break, end;
+    v   = [vs vc];  vold = [vsold vcold]; 
+    
+    if isnan(v), warning('v has NaN'), break, end
       
     change = norm(v-vold);                
       
@@ -60,10 +62,10 @@ for it=1:maxit
        fprintf ('%5i %10.1e\n',it,change)   
     end
     
-    if change<tol, break, end;           
+    if change<tol, break, end           
 end
 
-if change>tol,warning('No convergence'),else disp(' ... Solved!'); end;
+if change>tol,warning('No convergence'); end
 
 
 function v0 = getv0(i0,vc,n,m)

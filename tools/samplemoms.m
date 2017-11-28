@@ -24,6 +24,7 @@ smean  = mean(x)';
 sdev   = 100*std(x)';
 corr   = ones(nseries,2*k+1);
 
+if nseries>1
 for i=-k:k,
    if i<=0
       aux = corrcoef([x(1-i:nobs,m) x(1:nobs+i,1:nseries)]);
@@ -33,10 +34,14 @@ for i=-k:k,
       corr(:,k+i+1) = aux(2:nseries+1,1);
    end
 end
+elseif nseries == 1
+    corr = 1; 
+end
 
-% for j = 1: nseries  
-%         aux1(:,j) = autocorr(x(:,j),k);
-%         auocorr = aux1;
-% end
-    
-[acorr] = correlogram(x,k);
+for j = 1: nseries  
+        aux1(:,j) = correlogram2(x(:,j),k);
+end
+
+acorr = [flip(aux1,1);ones(1,nseries);aux1];
+% [acorr2] = correlogram(x,k);    
+

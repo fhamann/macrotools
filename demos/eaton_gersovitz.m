@@ -54,11 +54,11 @@ azero = find(a==0);                       % state where assets is zero
 
 % 0. Initial guess for q
 
-q0 = (1/(1+rate))*ones(n,m);
+q = (1/(1+rate))*ones(n,m);
 
 maxit = 1000;
 for it = 1:maxit
-  q0old = q0;    
+  q_old = q;    
 
   % 1. Construct the reward function without default and solve
 
@@ -69,7 +69,7 @@ for it = 1:maxit
   f  = zeros(n,m);
 
   for i=1:m
-    c(:,i) = y(:,i)+A-(G*a(i)).*q0(:,i); 
+    c(:,i) = y(:,i)+A-(G*a(i)).*q(:,i); 
   end
 
   f = (c.^(1-mu))/(1-mu); f(c<=0) = NaN;
@@ -110,10 +110,10 @@ for it = 1:maxit
 
   % 6. Update the price "q"
 
-  q0=(1/(1+rate))*(1-Edef);
-  q0=max(q0,0);
+  q=(1/(1+rate))*(1-Edef);
+  q=max(q,0);
 
-  if abs(q0old-q0)<10e-6,break,end
+  if abs(q_old-q)<10e-6,break,end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -131,7 +131,7 @@ pie   = ergdist(Pstar);           % ergodic distribution
 Psr = otpm(xr,prob,n2,1,n1);
 Psd = otpm(xd,prob,n2,1,n1);
 
-Eq    = (pie'*q0)';
+Eq    = (pie'*q)';
 Eap   = pie'*A(x);
 Dr    = pie'*D(x);
 
