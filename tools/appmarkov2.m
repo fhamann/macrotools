@@ -1,4 +1,4 @@
-function [Tran,s,probst,alambda,asigmay]=appmarkov2(const,lambda,sigma,m,N,meg)
+function [Tran,s,probst,alambda,asigmay]=appmarkov2(const,lambda,sigma,m,N)
 
 % APPMARKOV2 approximates a nonzero-mean AR(1) process with Markov chain
 %

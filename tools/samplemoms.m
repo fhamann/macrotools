@@ -24,19 +24,25 @@ smean  = mean(x)';
 sdev   = 100*std(x)';
 corr   = ones(nseries,2*k+1);
 
-if nseries>1
-for i=-k:k,
-   if i<=0
-      aux = corrcoef([x(1-i:nobs,m) x(1:nobs+i,1:nseries)]);
-      corr(:,k+i+1) = aux(2:nseries+1,1);
-  elseif i>0
-      aux = corrcoef([x(1:nobs-i,m) x(1+i:nobs,1:nseries)]);
-      corr(:,k+i+1) = aux(2:nseries+1,1);
-   end
+
+
+for i = 1:nseries
+[auxcorr,~,~] = crosscorr(x(:,m),x(:,i),k);
+corr(i,:) = auxcorr';
 end
-elseif nseries == 1
-    corr = 1; 
-end
+% if nseries>1
+% for i=-k:k,
+%    if i<=0
+%       aux = corrcoef([x(1-i:nobs,m) x(1:nobs+i,1:nseries)]);
+%       corr(:,k+i+1) = aux(2:nseries+1,1);
+%   elseif i>0
+%       aux = corrcoef([x(1:nobs-i,m) x(1+i:nobs,1:nseries)]);
+%       corr(:,k+i+1) = aux(2:nseries+1,1);
+%    end
+% end
+% elseif nseries == 1
+%     corr = 1; 
+% end
 
 for j = 1: nseries  
         aux1(:,j) = correlogram2(x(:,j),k);
