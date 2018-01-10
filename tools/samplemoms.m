@@ -24,12 +24,14 @@ smean  = mean(x)';
 sdev   = 100*std(x)';
 corr   = ones(nseries,2*k+1);
 
-
-
 for i = 1:nseries
-[auxcorr,~,~] = crosscorr(x(:,m),x(:,i),k);
+auxcorr   = ccorrelogram(x(:,m),x(:,i),k);
 corr(i,:) = auxcorr';
 end
+% for i = 1:nseries
+% [auxcorr,~,~] = crosscorr(x(:,m),x(:,i),k);
+% corr(i,:) = auxcorr';
+% end
 % if nseries>1
 % for i=-k:k,
 %    if i<=0
