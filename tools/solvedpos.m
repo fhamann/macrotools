@@ -53,7 +53,7 @@ for it=1:maxit
     V = vc;
     D = vs>vc  | isnan(vc)==1;
       
-<<<<<<< HEAD
+
     D = vs>vc  | isnan(vc)==1;   % Compute default decision
     vc(D==1)=vs(D==1);           % Max(vc,vs)
     
@@ -61,13 +61,12 @@ for it=1:maxit
     v   = [vs vc];  vold = [vsold vcold]; 
     
     if isnan(v), warning('v has NaN'), break, end
-=======
+
     V(find(D)) = vs(find(D));
     
     v0  = getv0(i0,V,n,m);
    
     v = [vs vc];  vold = [vsold vcold]; if isnan(v), break, end;
->>>>>>> a6fb05d16d1b327b2f14ed03333e939498f250f9
       
     change = norm(v-vold);                
       

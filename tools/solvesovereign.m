@@ -13,7 +13,7 @@ function [vs,xs,vc,xc,D,V] = solvesovereign(fc,fs,prob,beta,lambda,i0)
 %      fs     : n by m reward function if stops
 %      prob   : transition probability matrix of exogenous states
 %      beta   : discount factor
-%      lambda    : exogenous probability to re-entry from the outside
+%      lambda : exogenous probability to re-entry from the outside
 %      i0     : positions in X-grid for which debt is zero
 %
 %    OUTPUTS (n by 1 vectors)
@@ -37,9 +37,7 @@ vc = max(fc,[],2);
 V  = vc; 
 v0 = getv0(i0,V,n,m);
 
-aux1 = size(size(prob));
-
-if aux1(:,2) < 3
+if ndims(prob) < 3
     
 if prtiters, disp('\nSolving problem by value function iteration'); end
       
@@ -73,7 +71,7 @@ for it=1:maxit
     if change<tol, break, end          
 end
 
-if change>tol,warning('No convergence'),else disp(' ... Solved!'); end
+if change>tol,warning('No convergence'); end
 
 else 
     
@@ -98,14 +96,12 @@ for it=1:maxit
     D = vs>vc  | isnan(vc)==1;
       
     V(D==1) = vs(D==1);
-%        V(find(D)) = vs(find(D));
    
     v0  = getv0(i0,V,n,m);
    
     v = [vs vc];  vold = [vsold vcold]; if isnan(v), break, end
       
-%     change = norm(v-vold); 
-    change  = max(max(abs((v-vold))));
+    change  = max(max(abs((v-vold))));  %     change = norm(v-vold); 
       
     if prtiters   
        fprintf ('%5i %10.1e\n',it,change)   

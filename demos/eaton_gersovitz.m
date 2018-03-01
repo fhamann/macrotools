@@ -128,14 +128,11 @@ x     = (1-D).*xr+D.*azero;       % policy function
 Pstar = otpm1v(x,prob,n2,n1);     % optimal transition prob matrix
 pie   = ergdist(Pstar);           % ergodic distribution
 
-<<<<<<< HEAD
 Psr = otpm(xr,prob,n2,1,n1);
 Psd = otpm(xd,prob,n2,1,n1);
 
 Eq    = (pie'*q)';
-=======
 Eq    = (pie'*q0)';
->>>>>>> a6fb05d16d1b327b2f14ed03333e939498f250f9
 Eap   = pie'*A(x);
 Dr    = pie'*D(x);
 

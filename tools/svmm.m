@@ -5,15 +5,15 @@ function [Z,P]   = svmm(p,q,exprob,sigmaH,sigmaL,m,width,mH,mL)
 %
 % Syntax: 
 %   INPUTS
-%      p       : probability of staying in low output
-%      q       : probability of staying in high output
+%      p       : probability of staying in low state
+%      q       : probability of staying in high state
 %      exprob  : exogenous probability matrix
-%      sigmaH  : standard deviation of shocks in high output
-%      sigmaL  : standard deviation of shocks in low output
+%      sigmaH  : standard deviation of shocks in high state
+%      sigmaL  : standard deviation of shocks in low state
 %      m       : mean of the shocks
 %      width   : "width" of discretized state space s   
-%      mH      : mean of the shocks in high output
-%      mL      : mean of the shocks in low output
+%      mH      : mean of the shocks in high state
+%      mL      : mean of the shocks in low state
 %
 %    OUTPUTS
 %      P       : 4 by 4 transition probability for states 

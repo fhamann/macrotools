@@ -39,11 +39,11 @@
 function [x,sp,Fopt,resid] = solvetivec(model,fspace,s,xex,b,y)
 
 % SET THE DEFAULT OPTIONS
-  tol_it  = tiget('solveti','tol_it', 10^-8);    % error tolerance for time iteration
-  lambda  = tiget('solveti','lambda',0.8);       % updating weight for time iteration
-  maxit   = tiget('solveti','maxit',10000);      % maximum iters.  for time iteration
-  nplot   = tiget('solveti','nplot',000);       % # of nodes to evaluate errors (0 = do not do errors)
-  prntit  = tiget('solveti','prntit',0);        % prints every prntit iters. (0 = do not print)
+  tol_it  = tiget('solveti','tol_it', 10^-8);                              % error tolerance for time iteration
+  lambda  = tiget('solveti','lambda',0.8);                                 % updating weight for time iteration
+  maxit   = tiget('solveti','maxit',10000);                                % maximum iters.  for time iteration
+  nplot   = tiget('solveti','nplot',000);                                  % # of nodes to evaluate errors (0 = do not do errors)
+  prntit  = tiget('solveti','prntit',0);                                   % prints every prntit iters. (0 = do not print)
 
   if ~isfield(model,'e'); model.e = 0; e = 0;       else e = model.e; end;
   if ~isfield(model,'w'); model.w = eye(length(e)); else w = model.w;  end
@@ -55,23 +55,24 @@ params = model.params;
 
 if nargin < 4
  % DETERMINE NUMBER OF DIMENSIONS & COORDINATES
-  ns   = fspace.n;                          % Number of endogenous state variable nodes 
-  ne   = length(e);                         % Number of exogenous state variable nodes 
-  n    = ns*ne;                             % Number of state nodes
-  npar = length(params);                    % Number of parameters
-  smin = fspace.a;                          % Lower endogenous state variable limit
-  smax = fspace.b;                          % Higher endogenous state variable limit
+  ns   = fspace.n;                                                         % Number of endogenous state variable nodes 
+  ne   = length(e);                                                        % Number of exogenous state variable nodes 
+  n    = ns*ne;                                                            % Number of state nodes
+  npar = length(params);                                                   % Number of parameters
+  smin = fspace.a;                                                         % Lower endogenous state variable limit
+  smax = fspace.b;                                                         % Higher endogenous state variable limit
     
   if ~isfield(model,'actions'); sp = s; else sp = model.actions; end
-  if nplot == 0 && nargout>3 ; display(['Error analysis can not be computed, set the number of error-evaluation nodes higher than zero']);
+  if nplot == 0 && nargout>3 ; 
+      display(['For residuals, set number of error-evaluation nodes']);
   return; end; 
 
 % MATRIX REPLICATION
- ss = repmat(s,1,ne);                       % replicate the endogenous state variable 
- ee = repmat(e,ns,1);                       % replicate the exogenous state variable
- ww = repmat(w',length(s)/length(w),1);                      % replicate the transition probability matrix 
+ ss = repmat(s,1,ne);                                                      % replicate the endogenous state variable 
+ ee = repmat(e,ns,1);                                                      % replicate the exogenous state variable
+ ww = repmat(w',length(s)/length(w),1);                                    % replicate the transition probability matrix 
      
- snodes = funnode(fspace);               % state collocaton nodes
+ snodes = funnode(fspace);                                                 % state collocaton nodes
 
 % TIME ITERATION ALGORITHM  
    if prntit>0;    disp('Iteration   Norm'); end
@@ -79,47 +80,47 @@ if nargin < 4
 % COMPUTE BOUNDS
    [xl,xu] = feval(func,'b',s,[],e,sp,sp,params{:});
 
-   for it = 1:maxit                                                          % perform iterations
-    spold = sp;                                                              % store old policy function values
-    [~,x]    = feval(func,'i',s,[],e,sp,sp,params{:});                    % find the control variable values given the stored policy function
+   for it = 1:maxit                                                        % perform iterations
+    spold = sp;                                                            % store old policy function values
+    [~,x]    = feval(func,'i',s,[],e,sp,sp,params{:});                     % find the control variable values given the stored policy function
     x = min((max(x,xl)),xu); 
     
-    [f,fx,fs] = feval(func,'f',s,x,e,[],[],params{:});                    % evaluate the reward function 
-    [g,gx,gs] = feval(func,'g',s,x,e,[],[],params{:});                    % evaluate the transition function    
-    mu  = -fx./gx;                                                           % calculate the Lagrange multiplier using the reward and the transition function
-    mup = minterp(snodes,mu,sp);                                % interpolate the Lagrange multiplier
-    GSP = minterp(snodes,gs,sp);                % interpolate the transition function derivative according to the state given the policy function
-    FSP = minterp(snodes,fs,sp);                % interpolate the reward function derivative according to the state given the policy function
-    aux = (FSP + (GSP.*mup));                                               % create an auxiliar variable that incorporates the previous interpolation results
+    [f,fx,fs] = feval(func,'f',s,x,e,[],[],params{:});                     % evaluate the reward function 
+    [g,gx,gs] = feval(func,'g',s,x,e,[],[],params{:});                     % evaluate the transition function    
+    mu  = -fx./gx;                                                         % calculate the LM using the reward and the transition function
+    mup = minterp(snodes,mu,sp);                                           % interpolate the Lagrange multiplier
+    GSP = minterp(snodes,gs,sp);                                           % interpolate gs according to the state given the policy function
+    FSP = minterp(snodes,fs,sp);                                           % interpolate fs according to the state given the policy function
+    aux = (FSP + (GSP.*mup));                                              % create an auxiliar variable that incorporates the previous interpolation results
     aux = reshape(aux,length(s)/length(w),length(w));
-    emu = reshape((w*aux')',length(s),1);                  % calculate the expected value of the Lagrange multiplier
+    emu = reshape((w*aux')',length(s),1);                                  % calculate the expected value of the Lagrange multiplier
     [xopt,~]   = feval(func,'i',s,x,e,-beta.*gx.*emu,sp,params{:});        % find the optimal control variable values
     xopt = min((max(xopt,xl)),xu);           
     [sp,gx,gs] = feval(func,'g',s,xopt,e,[],[],params{:});                 % find the policy function values given the optimal control variable values
      sp = min(max(sp,smin),smax);
-    error_it   = max(max(abs(sp-spold)))/max(max(abs(spold)));               % compute the iteration errors
+    error_it   = max(max(abs(sp-spold)))/max(max(abs(spold)));             % compute the iteration errors
 
-    if mod(it, prntit) == 0; fprintf('%5i   %10.1e\n',it,error_it); end % print the iteration error each prntit iterations (see tiset)
-    if abs(error_it)<tol_it; break; end                                      % convergence check
+    if mod(it, prntit) == 0; fprintf('%5i   %10.1e\n',it,error_it); end    % print the iteration error each prntit iterations (see tiset)
+    if abs(error_it)<tol_it; break; end                                    % convergence check
  
-    sp = lambda*sp + (1-lambda)*spold;                                       % update the policy function
+    sp = lambda*sp + (1-lambda)*spold;                                     % update the policy function
    end
-  if prntit>0; fprintf('%5i   %10.1e\n',it,error_it); end                   % Print last iteration result
+  if prntit>0; fprintf('%5i   %10.1e\n',it,error_it); end                  % Print last iteration result
   
-  EE    = mu - beta.*emu;                                                     % compute the Euler Equation values
-  [~,x] = feval(func,'i',s,[],e,sp,sp,params{:}); x = min((max(x,xl)),xu); % find the optimal control variable values 
-  Fopt     = feval(func,'f',s,x,e,[],[],params{:});                           % evaluate the reward function
-%   v     = Fopt/(eye(length(w))-beta*w);                                                % calculate the optimal value function
+  EE    = mu - beta.*emu;                                                  % Euler Equation values
+  [~,x] = feval(func,'i',s,[],e,sp,sp,params{:}); x = min((max(x,xl)),xu); % optimal control variable values 
+  Fopt     = feval(func,'f',s,x,e,[],[],params{:});                        % evaluate the reward function
+%   v     = Fopt/(eye(length(w))-beta*w);                                  % optimal value function
   
   % ERROR ANALYSIS
   if nplot > 0    
       
-   splot  = linspace(smin,smax,nplot)';                                      % create an equidistant grid to evaluate the errors
+   splot  = linspace(smin,smax,nplot)';                                    % create an equidistant grid to evaluate the errors
    eplot  = linspace(min(e),max(e),nplot)';
    smat   = reshape(s,ns,length(w));
    emat   = reshape(s,ns,length(w));
-   SS     = minterp(snodes,smat(:,1),splot);                              % endogenous state variable matrix replication
-   E      = minterp(snodes,emat(:,1),eplot);                              % exogenous state variable matrix replication
+   SS     = minterp(snodes,smat(:,1),splot);                               % endogenous state variable matrix replication
+   E      = minterp(snodes,emat(:,1),eplot);                               % exogenous state variable matrix replication
    SP     = minterp(snodes,sp,splot);                                      % interpolate the error evaluation grid in the optimal policy function values
    if length(beta)>1
    BETA   = minterp(snodes,beta,splot);
@@ -140,26 +141,26 @@ if nargin < 4
    FSP   = minterp(splot,Fs,Sp);
    AUX   = repmat((FSP + (MUP.*GSP)),1,length(w));
    EMU   = (sum(w*AUX'))';
-   resid = MU - BETA.*EMU;                                                    % compute the residual
+   resid = MU - BETA.*EMU;                                                 % compute the residual
   end
 %%     
 elseif nargin < 5
 % DETERMINE NUMBER OF DIMENSIONS & COORDINATES
-  ns   = fspace.n;                          % Number of endogenous state variable nodes 
-  ne   = length(e);                         % Number of exogenous state variable nodes 
-  n    = ns*ne;                             % Number of state nodes
-  npar = length(params);                    % Number of parameters
-  smin = fspace.a;                          % Lower endogenous state variable limit
-  smax = fspace.b;                          % Higher endogenous state variable limit
+  ns   = fspace.n;                                                         % Number of endogenous state variable nodes 
+  ne   = length(e);                                                        % Number of exogenous state variable nodes 
+  n    = ns*ne;                                                            % Number of state nodes
+  npar = length(params);                                                   % Number of parameters
+  smin = fspace.a;                                                         % Lower endogenous state variable limit
+  smax = fspace.b;                                                         % Higher endogenous state variable limit
     
   if ~isfield(model,'actions'); sp = repmat(s,1,ne); else sp = model.actions; end
   if nplot == 0 && nargout>3 ; display(['Error analysis can not be computed, set the number of error-evaluation nodes higher than zero']);
   return; end; 
 
 % MATRIX REPLICATION
-%  ss = repmat(s,1,ne);                       % replicate the endogenous state variable 
-%  ee = repmat(e,ns,1);                       % replicate the exogenous state variable
-%  ww = repmat(w',ns,1);                      % replicate the transition probability matrix 
+%  ss = repmat(s,1,ne);       % replicate the endogenous state variable 
+%  ee = repmat(e,ns,1);       % replicate the exogenous state variable
+%  ww = repmat(w',ns,1);      % replicate the transition probability matrix 
     
 % TIME ITERATION ALGORITHM  
     if prntit>0;    disp('Iteration   Norm'); end
@@ -167,45 +168,45 @@ elseif nargin < 5
 % COMPUTE BOUNDS
    [xl,xu] = feval(func,'b',s,[],e,sp,sp,xex,params{:});
 
-   for it = 1:maxit                                                          % perform iterations
-    spold = sp;                                                              % store old policy function values
-    [~,x]    = feval(func,'i',s,[],e,sp,sp,xex,params{:});                    % find the control variable values given the stored policy function
+   for it = 1:maxit                                                        % perform iterations
+    spold = sp;                                                            % store old policy function values
+    [~,x]    = feval(func,'i',s,[],e,sp,sp,xex,params{:});                 % find the control variable values given the stored policy function
     x = min((max(x,xl)),xu); 
     
-    [f,fx,fs] = feval(func,'f',s,x,e,[],[],xex,params{:});                    % evaluate the reward function 
-    [g,gx,gs] = feval(func,'g',s,x,e,[],[],xex,params{:});                    % evaluate the transition function    
+    [f,fx,fs] = feval(func,'f',s,x,e,[],[],xex,params{:});                 % evaluate the reward function 
+    [g,gx,gs] = feval(func,'g',s,x,e,[],[],xex,params{:});                 % evaluate the transition function    
    
-     mu  = -fx./gx;                                                           % calculate the Lagrange multiplier using the reward and the transition function
-    mup = minterp(snodes,mu,sp);                                % interpolate the Lagrange multiplier
-    GSP = minterp(snodes,gs,sp);                % interpolate the transition function derivative according to the state given the policy function
-    FSP = minterp(snodes,fs,sp);                % interpolate the reward function derivative according to the state given the policy function
-    aux = (FSP + (GSP.*mup));                                               % create an auxiliar variable that incorporates the previous interpolation results
+     mu  = -fx./gx;                                                        % calculate the Lagrange multiplier using the reward and the transition function
+    mup = minterp(snodes,mu,sp);                                           % interpolate the Lagrange multiplier
+    GSP = minterp(snodes,gs,sp);                                           % interpolate the transition function derivative according to the state given the policy function
+    FSP = minterp(snodes,fs,sp);                                           % interpolate the reward function derivative according to the state given the policy function
+    aux = (FSP + (GSP.*mup));                                              % create an auxiliar variable that incorporates the previous interpolation results
     aux = reshape(aux,length(s)/length(w),length(w));
-    emu = reshape((w*aux')',length(s),1);                  % calculate the expected value of the Lagrange multiplier
-    [xopt,~]   = feval(func,'i',s,x,e,-beta*gx.*emu,sp,xex,params{:});        % find the optimal control variable values
+    emu = reshape((w*aux')',length(s),1);                                  % calculate the expected value of the Lagrange multiplier
+    [xopt,~]   = feval(func,'i',s,x,e,-beta*gx.*emu,sp,xex,params{:});     % find the optimal control variable values
     xopt = min((max(xopt,xl)),xu);           
-    [sp,gx,gs] = feval(func,'g',s,xopt,e,[],[],xex,params{:});                 % find the policy function values given the optimal control variable values
+    [sp,gx,gs] = feval(func,'g',s,xopt,e,[],[],xex,params{:});             % find the policy function values given the optimal control variable values
      sp = min(max(sp,smin),smax);
-    error_it   = max(max(abs(sp-spold)))/max(max(abs(spold)));                   % compute the iteration errors
+    error_it   = max(max(abs(sp-spold)))/max(max(abs(spold)));             % compute the iteration errors
 
-    if mod(it, prntit) == 0; fprintf('%5i   %10.1e\n',it,error_it); end % print the iteration error each prntit iterations (see tiset)
-    if abs(error_it)<tol_it; break; end                                      % convergence check
+    if mod(it, prntit) == 0; fprintf('%5i   %10.1e\n',it,error_it); end    % print the iteration error each prntit iterations (see tiset)
+    if abs(error_it)<tol_it; break; end                                    % convergence check
  
-    sp = lambda*sp + (1-lambda)*spold;                                       % update the policy function
+    sp = lambda*sp + (1-lambda)*spold;                                     % update the policy function
    end
-  if prntit>0; fprintf('%5i   %10.1e\n',it,error_it); end                                % Print last iteration result
-  EE    = mu - beta*emu;                                                     % compute the Euler Equation values
-  [~,x] = feval(func,'i',s,[],e,sp,sp,xex,params{:}); x = min((max(x,xl)),xu); % find the optimal control variable values 
-  Fopt  = feval(func,'f',s,x,e,[],[],xex,params{:});                           % evaluate the reward function
-%   v     = Fopt/(eye(ne)-beta*w);                                                % calculate the optimal value function
+  if prntit>0; fprintf('%5i   %10.1e\n',it,error_it); end                  % Print last iteration result
+  EE   = mu - beta*emu;                                                    % compute the Euler Equation values
+  [~,x]=feval(func,'i',s,[],e,sp,sp,xex,params{:}); x=min((max(x,xl)),xu); % find the optimal control variable values 
+  Fopt  = feval(func,'f',s,x,e,[],[],xex,params{:});                       % evaluate the reward function
+%   v     = Fopt/(eye(ne)-beta*w);                                         % calculate the optimal value function
   
   % ERROR ANALYSIS
   if nplot > 0    
       
-   splot  = linspace(smin,smax,nplot)';                                      % create an equidistant grid to evaluate the errors
-   SS     = minterp(snodes,s,splot);                                            % endogenous state variable matrix replication
-   E      = minterp(snodes,e,splot);                                                % exogenous state variable matrix replication
-   SP     = minterp(snodes,sp,splot);                           % interpolate the error evaluation grid in the optimal policy function values
+   splot  = linspace(smin,smax,nplot)';                                    % create an equidistant grid to evaluate the errors
+   SS     = minterp(snodes,s,splot);                                       % endogenous state variable matrix replication
+   E      = minterp(snodes,e,splot);                                       % exogenous state variable matrix replication
+   SP     = minterp(snodes,sp,splot);                                      % interpolate the error evaluation grid in the optimal policy function values
    XEX    = minterp(snodes,xex,splot);
    if length(beta)>1
    BETA   = minterp(snodes,beta,splot);
@@ -226,7 +227,7 @@ elseif nargin < 5
    FSP   = minterp(splot,Fs,Sp);
    AUX   = repmat((FSP + (MUP.*GSP)),1,length(w));
    EMU   = (sum(w*AUX'))';
-   resid = MU - BETA.*EMU;                                                    % compute the residual   
+   resid = MU - BETA.*EMU;                                                 % compute the residual   
    end
 end
     
