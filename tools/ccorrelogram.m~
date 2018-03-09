@@ -1,9 +1,9 @@
-function xcf = ccorrelogram(y,x,p)
+function xcf = xcorrelogram(y,x,p)
 
 % CCORRELOGRAM - Compute Autocorrelations Through p Lags
 %
 % Usage:
-%             xcf = ccorrelogram(y,x,p)
+%             xcf = xcorrelogram(y,x,p)
 %
 % Inputs:
 %     y - series to compute acf for, nx1 column vector
