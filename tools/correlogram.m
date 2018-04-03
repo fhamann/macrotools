@@ -26,8 +26,8 @@ if T-p<=0
 end
 for i=1:n
   for j=1:p+1
-    vcov   = cov([X(j:T,i),X(1:T-j+1,i)]);
-    c(j,i) = vcov(2,1)/((vcov(2,2)*vcov(1,1))^0.5);
+    vcov   = nancov([X(j:T,i),X(1:T-j+1,i)]);
+    c(j,i) = vcov(2,1)/((sqrt(vcov(2,2))*sqrt(vcov(1,1))));
   end
 end
 c = [c(p+1:-1:2,:);c];

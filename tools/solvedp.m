@@ -22,12 +22,12 @@ function [v,x,pstar] = solvedp(f,P,beta,alg,v)
 % Adapted by Franz Hamann based on some old code by Fackler and Miranda.
 
 % SET CONVERGENCE PARAMETER DEFAULTS
-  maxit    = 5000;                    % maximum number of iterations
-  tol      = 10e-6;                   % convergence tolerance
-  prtiters = 1;                       % print iterations (1) or not (0)
+  maxit    = 5000;         % maximum number of iterations
+  tol      = 10e-6;        % convergence tolerance
+  prtiters = 50;           % print iterations every (prtiters>0) or not (0)
 
 [n,m] = size(f);
-if nargin<5 v=zeros(n,1);             % initial v [v=0]
+if nargin<5 v=zeros(n,1);         % initial v [v=0]
 else v=reshape(v,n,1);
 end
 
@@ -40,11 +40,9 @@ if nargin<4
   end
     for it=1:maxit
       vold = v;                             % store old value
-      [v,x] = valmax(v,f,P,beta);          % update policy
+      [v,x] = valmax(v,f,P,beta);           % update policy
       change = norm(v-vold);                % compute change
-      if prtiters 
-         fprintf ('%5i %10.1e\n',it,change) % print progress
-      end
+      if mod(it,prtiters)==0; fprintf ('%5i %10.1e\n',it,change); end
       if change<tol, break, end;            % convergence check
     end
     pstar = valpol(x,f,P,beta);
@@ -59,9 +57,7 @@ switch alg
       [pstar,fstar] = valpol(x,f,P,beta);   % induced P and f 
       v = (speye(n,n)-beta*pstar)\fstar;      % update value
       change = norm(v-vold);                % compute change
-      if prtiters
-        fprintf ('%5i %10.1e\n',it,change)  % print progress
-      end
+      if mod(it,prtiters)==0; fprintf ('%5i %10.1e\n',it,change); end
       if change<tol, break, end;            % convergence check
     end
     if change>tol, warning('Failure to converge in solvedp'), end;
@@ -71,9 +67,7 @@ switch alg
       vold = v;                             % store old value
       [v,x] = valmax(v,f,P,beta);           % update policy
       change = norm(v-vold);                % compute change
-      if prtiters 
-         fprintf ('%5i %10.1e\n',it,change) % print progress
-      end
+      if mod(it,prtiters)==0; fprintf ('%5i %10.1e\n',it,change); end
       if change<tol, break, end;            % convergence check
     end
     pstar = valpol(x,f,P,beta);

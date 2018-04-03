@@ -1,6 +1,6 @@
 function xcf = xcorrelogram(y,x,p)
 
-% XCORRELOGRAM - Compute Cross correlations through p Lags
+% XCORRELOGRAM - Cross correlations through p Lags
 %
 % Usage:
 %             xcf = xcorrelogram(y,x,p)
@@ -24,21 +24,21 @@ if ~((a1==1 & a2==1) & (p<n1))
     error('Input p must be scalar and less than length(y)')
 end
 
-
 xcf = zeros(p,1);
 
 N = max(size(y));
-ybar = mean(y); 
-xbar = mean(x); 
+ybar = nanmean(y); 
+xbar = nanmean(x); 
 
 % Collect ACFs at each lag i
 for i = 1:p
    la(i) = lag(y,x,i) ; 
 end
 
-yvar = sqrt((y-ybar)'*(y-ybar) );
-xvar = sqrt((x-xbar)'*(x-xbar) );
-current = sum((y-ybar).*(x-xbar))/(yvar*xvar);
+yvar = sqrt(nansum((y-ybar).^2)); %yvar = sqrt((y-ybar)'*(y-ybar));
+xvar = sqrt(nansum((x-xbar).^2)); %xvar = sqrt((x-xbar)'*(x-xbar));
+
+current = nansum((y-ybar).*(x-xbar))/(yvar*xvar);
 
 for i = 1:p
    le(i) = lead(y,x,i) ; 
@@ -51,8 +51,8 @@ xcf = [flip(la) current le]';
 function ta2 = lag(y,x,k)
 
 N = max(size(y)) ;
-ybar = mean(y); 
-xbar = mean(x); 
+ybar = nanmean(y); 
+xbar = nanmean(x); 
 cross_sum = zeros(N-k,1) ;
 
 % Numerator, unscaled covariance
@@ -61,10 +61,11 @@ for i = (k+1):N
 end
 
 % Denominator, unscaled variance
-yvar = sqrt((y-ybar)'*(y-ybar) );
-xvar = sqrt((x-xbar)'*(x-xbar) );
+yvar = sqrt(nansum((y-ybar).^2)); %yvar = sqrt((y-ybar)'*(y-ybar));
+xvar = sqrt(nansum((x-xbar).^2)); %xvar = sqrt((x-xbar)'*(x-xbar));
 
-ta2 = sum(cross_sum) / (yvar*xvar) ;
+ta2 = nansum(cross_sum) / (yvar*xvar) ;
+
 
 % ---------------
 % SUB FUNCTION
@@ -72,8 +73,8 @@ ta2 = sum(cross_sum) / (yvar*xvar) ;
 function ta2 = lead(y,x,k)
 
 N = max(size(y)) ;
-ybar = mean(y); 
-xbar = mean(x); 
+ybar = nanmean(y); 
+xbar = nanmean(x); 
 cross_sum = zeros(N-k,1) ;
 
 % Numerator, unscaled covariance
@@ -82,9 +83,7 @@ for i = (k+1):N
 end
 
 % Denominator, unscaled variance
-yvar = sqrt((y-ybar)'*(y-ybar) );
-xvar = sqrt((x-xbar)'*(x-xbar) );
+yvar = sqrt(nansum((y-ybar).^2)); %yvar = sqrt((y-ybar)'*(y-ybar));
+xvar = sqrt(nansum((x-xbar).^2)); %xvar = sqrt((x-xbar)'*(x-xbar));
 
-ta2 = sum(cross_sum) / (yvar*xvar) ;
-
-
+ta2 = nansum(cross_sum) / (yvar*xvar) ;

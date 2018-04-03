@@ -36,6 +36,7 @@ end;
 
 F = cumsum(P');
 
+
 for t = 2:T;
   x    = find(rand < F(:,S(t-1)));
   S(t) = x(1);

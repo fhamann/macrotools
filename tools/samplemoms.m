@@ -20,12 +20,12 @@ function [smean,sdev,corr,acorr] = samplemoms(x,m,k)
 
 if nargin<3; k = 3; end         % default number of k lags and k leads  
 
-smean  = mean(x)';
-sdev   = 100*std(x)';
+smean  = nanmean(x)';
+sdev   = nanstd(x)';
 corr   = ones(nseries,2*k+1);
 
 for i = 1:nseries
-auxcorr   = ccorrelogram(x(:,m),x(:,i),k);
+auxcorr   = xcorrelogram(x(:,m),x(:,i),k);
 corr(i,:) = auxcorr';
 end
 

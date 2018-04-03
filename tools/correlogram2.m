@@ -25,7 +25,7 @@ end
 
 ta = zeros(p,1) ;
 N = max(size(y)) ;
-ybar = mean(y); 
+ybar = nanmean(y); 
 
 % Collect ACFs at each lag i
 for i = 1:p
@@ -36,15 +36,20 @@ end
 function ta2 = acf_k(y,k)
  
 N    = max(size(y)) ;
-ybar = mean(y); 
-cross_sum = zeros(N-k,1) ;
+ybar = nanmean(y); 
+
+numerator   = zeros(N-k,1) ;
+denominator = zeros(N-k,1) ;
 
 % Numerator, unscaled covariance
 for i = (k+1):N
-    cross_sum(i) = (y(i)-ybar)*(y(i-k)-ybar) ;
+    numerator(i)   = (y(i)-ybar)*(y(i-k)-ybar);
 end
 
 % Denominator, unscaled variance
-yvar = (y-ybar)'*(y-ybar) ;
+%yvar = (y-ybar)'*(y-ybar) ;
+for i = 1:N
+    denominator(i) = (y(i)-ybar)*(y(i)-ybar);
+end
 
-ta2 = sum(cross_sum) / yvar ;
+ta2 = nansum(numerator) / nansum(denominator) ;
