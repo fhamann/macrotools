@@ -1,28 +1,43 @@
-function P = otpm(x,prob,ns1,ns2,nz)
-
-% OTPM Optimal Transition Probability Matrix
+function [Pstar] = otpm(x,prob,x_order)
+% New OTPM Optimal Transition Probability Matrix version 2020
 %
 % Usage:
-%           P = otpm(x,prob,nb,ns,nz)
+%           P = otpm(x,prob,x_order)
 %
 %   INPUTS
-%       x      : optimal policy function (nb*ns*nz by 1  vector)
-%       prob   : transition probability matrix for exogenous process
-%       nb     : # of grid pts in the first endogenous state variable 
-%       ns     : # of grid pts in the second endogenous state variable 
-%       nz     : # of grid pts in the space of exogenous state variables 
-%
+%       x      : optimal policy function nx1 vector
+%       prob   : transition probability matrix for exogenous process nexne
+%                matrix
+%     optional : 
+%       x_order: Indicative variable describing how x is sorted. (def =  1)
+%              [1]: If x varies first on the exogenous variables and then
+%                on the endogenous  
+%                2: If x varies first on the endogenous variables and then
+%                on the exogenous
+%                (Note: Be careful how the gridmake is defined) 
 %   OUTPUT
-%       P      : Optimal transtion matrix P(s,z)
+%       Pstar  : Optimal transtion matrix (nxn)
 
+n     = length(x)   ;
+nexo  = size(prob,1);
+nendo = n/nexo      ;
 
-n   = length(x);
-PP  = [prob;zeros((ns1*ns2-1)*nz,nz)];
-PP2 = reshape(PP,nz,n);
-PP3 = kron(PP2,ones(ns1*ns2,1));
+    if nargin<3
+        xt_order = 1;
+    else
+        xt_order = x_order;
+    end
 
-P = zeros(n);
-
-for i=1:n
-    P(i,x(i):n) = PP3(i,1:n-x(i)+1);
-end
+        P1 = repmat(prob,nendo,1);    
+    if xt_order ~= 1 
+        x = vec(reshape(x,nendo,nexo)');
+    end
+        Pstar = zeros(n);
+    for ix = 1:n
+        Pstar(ix,nexo*(x(ix)-1)+1:nexo*x(ix)) = P1(ix,:);
+    end
+    
+    if xt_order ~= 1     
+        Pstar = permute(reshape(Pstar,nexo,nendo,nexo,nendo),[2 1 4 3]);
+        Pstar = reshape(Pstar,n,n);
+    end
