@@ -1,4 +1,4 @@
-macrotoolbox
+macrotools
 ============
 
 Discrete dynamic programming for macroeconomists
